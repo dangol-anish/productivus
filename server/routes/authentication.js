@@ -3,9 +3,10 @@ const pool = require("../models/database");
 const bcrypt = require("bcrypt");
 const generator = require("../utils/generator");
 const authorization = require("../middlwares/authorization");
+const validation = require("../middlwares/validation");
 
 //user registration
-router.post("/register", async (req, res) => {
+router.post("/register", validation, async (req, res) => {
   const { username, email, password } = req.body;
   try {
     const checkUser = await pool.query(
@@ -39,7 +40,7 @@ router.post("/register", async (req, res) => {
 
 //user login
 
-router.post("/login", async (req, res) => {
+router.post("/login", validation, async (req, res) => {
   try {
     const { email, password } = req.body;
 

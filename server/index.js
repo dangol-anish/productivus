@@ -6,6 +6,7 @@ const cookieParser = require("cookie-parser");
 
 // file routes
 const authentication = require("./routes/authentication");
+const dashboard = require("./routes/dashboard");
 
 //middleware
 app.use(cors());
@@ -14,6 +15,7 @@ app.use(cookieParser());
 
 // routes
 app.use("/auth", authentication);
+app.use("/dashboard", dashboard);
 
 app.listen(process.env.PORT, () => {
   console.log(`Server is running on port ${process.env.PORT}`);
