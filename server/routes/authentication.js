@@ -26,16 +26,18 @@ router.post("/register", async (req, res) => {
     );
 
     const token = generator(newUser.rows[0].user_id);
-
-    res.header("token", `${token}`);
-
-    res.json({ token });
+    return res
+      .cookie("access_token", token, {
+        httpOnly: true,
+      })
+      .status(200)
+      .json({ message: "Registered Successfully" });
   } catch (err) {
     console.error(err.message);
   }
 });
 
-//login
+//user login
 
 router.post("/login", async (req, res) => {
   try {
@@ -66,7 +68,7 @@ router.post("/login", async (req, res) => {
         httpOnly: true,
       })
       .status(200)
-      .json({ message: "Logged in successfully 😊 👌" });
+      .json({ message: "Logged in successfully" });
   } catch (err) {
     console.error(err.message);
   }
