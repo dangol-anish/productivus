@@ -10,22 +10,25 @@ router.post("/register", validation, async (req, res) => {
   try {
     const { username, email, password } = req.body;
 
-    const existingUser = await pool.query(
-      "SELECT * FROM users WHERE user_email = $1",
-      [email]
-    );
+    const existingUserQuery = {
+      text: "SELECT * FROM users WHERE user_email = $1",
+      values: [email],
+    };
+
+    const existingUser = await pool.query(existingUserQuery);
 
     if (existingUser.rows.length > 0) {
       return res.status(400).json("You already have an account");
     }
 
-    const saltRounds = 10;
-    const hashedPassword = await bcrypt.hash(password, saltRounds);
+    const hashedPassword = await bcrypt.hash(password, 10);
 
-    const newUser = await pool.query(
-      "INSERT INTO users (user_name, user_email, user_password) VALUES ($1, $2, $3) RETURNING *",
-      [username, email, hashedPassword]
-    );
+    const newUserQuery = {
+      text: "INSERT INTO users (user_name, user_email, user_password) VALUES ($1, $2, $3) RETURNING *",
+      values: [username, email, hashedPassword],
+    };
+
+    const newUser = await pool.query(newUserQuery);
 
     const token = generator(newUser.rows[0].user_id);
 
@@ -44,10 +47,12 @@ router.post("/login", validation, async (req, res) => {
   try {
     const { email, password } = req.body;
 
-    const existingUser = await pool.query(
-      "SELECT * FROM users WHERE user_email = $1",
-      [email]
-    );
+    const existingUserQuery = {
+      text: "SELECT * FROM users WHERE user_email = $1",
+      values: [email],
+    };
+
+    const existingUser = await pool.query(existingUserQuery);
 
     if (existingUser.rows.length === 0) {
       return res.json("You don't have an account");
