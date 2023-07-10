@@ -5,82 +5,82 @@ const generator = require("../utils/generator");
 const authorization = require("../middlwares/authorization");
 const validation = require("../middlwares/validation");
 
-//user registration
+// User registration
 router.post("/register", validation, async (req, res) => {
-  const { username, email, password } = req.body;
   try {
-    const checkUser = await pool.query(
-      "select * from users where user_email =$1",
+    const { username, email, password } = req.body;
+
+    const existingUser = await pool.query(
+      "SELECT * FROM users WHERE user_email = $1",
       [email]
     );
 
-    if (checkUser.rows.length > 0) {
-      return res.json("You already have an account");
+    if (existingUser.rows.length > 0) {
+      return res.status(400).json("You already have an account");
     }
 
-    const saltRounds = await bcrypt.genSalt(10);
-    const bcryptPassword = await bcrypt.hash(password, saltRounds);
+    const saltRounds = 10;
+    const hashedPassword = await bcrypt.hash(password, saltRounds);
 
     const newUser = await pool.query(
       "INSERT INTO users (user_name, user_email, user_password) VALUES ($1, $2, $3) RETURNING *",
-      [username, email, bcryptPassword]
+      [username, email, hashedPassword]
     );
 
     const token = generator(newUser.rows[0].user_id);
+
     return res
-      .cookie("access_token", token, {
-        httpOnly: true,
-      })
+      .cookie("access_token", token, { httpOnly: true })
       .status(200)
-      .json({ message: "Registered Successfully" });
+      .json({ message: "Registered successfully" });
   } catch (err) {
     console.error(err.message);
+    return res.status(500).json("Server error");
   }
 });
 
-//user login
-
+// User login
 router.post("/login", validation, async (req, res) => {
   try {
     const { email, password } = req.body;
 
-    const checkUser = await pool.query(
-      "select * from users where user_email =$1",
+    const existingUser = await pool.query(
+      "SELECT * FROM users WHERE user_email = $1",
       [email]
     );
 
-    if (checkUser.rows.length === 0) {
+    if (existingUser.rows.length === 0) {
       return res.json("You don't have an account");
     }
 
-    const validPassword = await bcrypt.compare(
+    const isValidPassword = await bcrypt.compare(
       password,
-      checkUser.rows[0].user_password
+      existingUser.rows[0].user_password
     );
 
-    if (!validPassword) {
+    if (!isValidPassword) {
       return res.json("Username or password is incorrect");
     }
 
-    const token = generator(checkUser.rows[0].user_id);
+    const token = generator(existingUser.rows[0].user_id);
 
     return res
-      .cookie("access_token", token, {
-        httpOnly: true,
-      })
+      .cookie("access_token", token, { httpOnly: true })
       .status(200)
       .json({ message: "Logged in successfully" });
   } catch (err) {
     console.error(err.message);
+    return res.status(500).json("Server error");
   }
 });
 
+// Verify user
 router.post("/verify", authorization, (req, res) => {
   try {
-    res.json(true);
+    return res.json(true);
   } catch (err) {
     console.error(err.message);
-    res.status(500).send("Server error");
+    return res.status(500).json("Server error");
   }
 });
 
